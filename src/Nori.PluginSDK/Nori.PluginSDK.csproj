@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Nori.PluginRuntime</RootNamespace>
+    <AssemblyName>Nori.PluginRuntime</AssemblyName>
+    <PackageId>Nori.PluginSDK</PackageId>
+    <Version>2.0.0</Version>
+    <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
+    <Description>Compile-time contracts for Nori Desktop Plugin API 2.0.</Description>
+    <Authors>FuturumTech</Authors>
+    <RepositoryUrl>https://github.com/FuturumTech/Nori.PluginSDK</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Nori Desktop owns the runtime contract assembly. Package this as compile-time only. -->
+    <None Include="$(TargetPath)" Pack="true" PackagePath="ref/$(TargetFramework)/" />
+  </ItemGroup>
+</Project>

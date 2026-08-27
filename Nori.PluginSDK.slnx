@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/Nori.PluginSDK/Nori.PluginSDK.csproj" />
+  <Project Path="examples/HelloNori/HelloNori.csproj" />
+</Solution>

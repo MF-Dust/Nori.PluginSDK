@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>HelloNori</AssemblyName>
+    <RootNamespace>HelloNori</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Compile against the contract without copying it beside the plugin DLL. -->
+    <ProjectReference Include="../../src/Nori.PluginSDK/Nori.PluginSDK.csproj" Private="false" />
+  </ItemGroup>
+</Project>

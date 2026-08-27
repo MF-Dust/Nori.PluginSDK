@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "io.nori.hello",
+  "name": "Hello Nori",
+  "description": "Minimal Nori Plugin API 2.0 example.",
+  "version": "1.0.0",
+  "authors": [
+    { "name": "Nori Plugin Developer" }
+  ],
+  "apiVersion": "2.0",
+  "minHostVersion": "1.0.0",
+  "runtime": {
+    "kind": "dotnet",
+    "assembly": "lib/HelloNori.dll",
+    "entryType": "HelloNori.Plugin"
+  },
+  "ui": {
+    "webRoot": "web"
+  },
+  "capabilities": [
+    "ui.webview"
+  ],
+  "optionalCapabilities": [],
+  "platforms": [
+    "windows",
+    "linux",
+    "macos"
+  ],
+  "dependencies": []
+}

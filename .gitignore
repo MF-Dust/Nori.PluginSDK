@@ -1,0 +1,7 @@
+bin/
+obj/
+artifacts/
+*.user
+*.suo
+*.nupkg
+*.snupkg
