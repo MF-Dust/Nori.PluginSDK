@@ -13,7 +13,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <BuildOutputTargetFolder>ref</BuildOutputTargetFolder>
-    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
