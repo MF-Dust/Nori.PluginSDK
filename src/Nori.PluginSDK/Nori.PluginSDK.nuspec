@@ -11,10 +11,14 @@
     <dependencies>
       <group targetFramework="net10.0" />
     </dependencies>
+    <references>
+      <group targetFramework="net10.0">
+        <reference file="Nori.PluginRuntime.dll" />
+      </group>
+    </references>
   </metadata>
   <files>
     <file src="bin/$configuration$/net10.0/Nori.PluginRuntime.dll" target="ref/net10.0" />
-    <file src="bin/$configuration$/net10.0/Nori.PluginRuntime.xml" target="ref/net10.0" />
     <file src="../../README.md" target="" />
   </files>
 </package>
