@@ -11,12 +11,14 @@
     <RepositoryUrl>https://github.com/FuturumTech/Nori.PluginSDK</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);1591</NoWarn>
-
-    <!-- The host supplies Nori.PluginRuntime at runtime. The NuGet package is compile-time only. -->
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-    <NuspecFile>Nori.PluginSDK.nuspec</NuspecFile>
-    <NuspecBasePath>$(MSBuildProjectDirectory)</NuspecBasePath>
-    <NuspecProperties>version=$(Version);configuration=$(Configuration)</NuspecProperties>
+    <!-- NU5131 is a known NuGet/MSBuild false positive for intentional ref-only packages. -->
+    <NoWarn>$(NoWarn);1591;NU5131</NoWarn>
+    <BuildOutputTargetFolder>ref</BuildOutputTargetFolder>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Nori Desktop owns the runtime contract assembly. Pack it only under ref/net10.0. -->
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 </Project>
