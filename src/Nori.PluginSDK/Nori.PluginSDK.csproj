@@ -12,12 +12,13 @@
     <RepositoryType>git</RepositoryType>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <BuildOutputTargetFolder>ref</BuildOutputTargetFolder>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Nori Desktop owns the runtime contract assembly. Package this as compile-time only. -->
-    <None Include="$(TargetPath)" Pack="true" PackagePath="ref/$(TargetFramework)/" />
+    <!-- Nori Desktop owns the runtime contract assembly. Pack it only under ref/net10.0. -->
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 </Project>
