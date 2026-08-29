@@ -27,6 +27,24 @@ dotnet build Nori.PluginSDK.slnx
 
 The SDK project emits an assembly named `Nori.PluginRuntime` because that is the contract assembly name used by Nori Desktop. Its assembly version stays at `0.0.0.0`; Plugin API compatibility is governed by `manifest.json` `apiVersion`, not CLR assembly versioning.
 
+## Install from NuGet
+
+Published SDK releases can be referenced directly from NuGet:
+
+```bash
+dotnet add package Nori.PluginSDK --version 2.0.0
+```
+
+or from a project file:
+
+```xml
+<PackageReference Include="Nori.PluginSDK" Version="2.0.0" />
+```
+
+The package contains the contract assembly only as a compile-time `ref/net10.0` asset. Plugin packages must not ship `Nori.PluginRuntime.dll`; Nori Desktop provides the runtime contract assembly.
+
+Repository releases use tags matching the package version, for example `v2.0.0`. The publish workflow verifies that the tag matches the `<Version>` value in `Nori.PluginSDK.csproj` before pushing to NuGet.org.
+
 ## Reference from a plugin
 
 During development inside this repository:
