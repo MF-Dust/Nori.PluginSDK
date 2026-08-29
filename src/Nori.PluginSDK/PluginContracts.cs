@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Nori.PluginRuntime;
@@ -59,6 +60,26 @@ public interface IPluginAssets
 /// <summary>Marker interface for a plugin contribution.</summary>
 public interface IPluginContribution
 {
+}
+
+/// <summary>
+/// Executable action contributed by the plugin to the host.
+/// The host registers active plugin actions as AI tools (plugin__&lt;pluginId&gt;__&lt;actionId&gt;)
+/// so the assistant can invoke them.
+/// </summary>
+public interface IPluginActionContribution : IPluginContribution
+{
+    /// <summary>Action ID (unique within the plugin; used in the host tool name).</summary>
+    string Id { get; }
+
+    /// <summary>Model-facing action description.</summary>
+    string Description { get; }
+
+    /// <summary>Parameter JSON Schema (null means no parameters).</summary>
+    JsonNode? ParametersSchema { get; }
+
+    /// <summary>Executes the action and returns a serializable result.</summary>
+    Task<JsonObject?> InvokeAsync(JsonNode? arguments, CancellationToken cancellationToken);
 }
 
 /// <summary>Revocable registration handle for a contribution.</summary>
@@ -139,12 +160,23 @@ public interface IWebViewCapability : IPluginCapability
         CancellationToken cancellationToken = default);
 }
 
+/// <summary>Plugin-provided handler for custom WebView bridge commands. Non-allowlisted commands invoked from the plugin's page are forwarded to this handler.</summary>
+public interface IPluginWebViewCommandHandler
+{
+    /// <summary>Handles a custom command from the plugin page. The return value is JSON-serialized back to the page.</summary>
+    Task<object?> HandleAsync(string command, JsonElement args, CancellationToken cancellationToken);
+}
+
 /// <summary>Options used to create a plugin WebView window.</summary>
 public sealed record PluginWebViewOptions
 {
     public required string Id { get; init; }
     public required string Title { get; init; }
     public required string EntryPoint { get; init; }
+
+    /// <summary>Optional plugin custom bridge command handler. When null, non-allowlisted commands are still denied.</summary>
+    public IPluginWebViewCommandHandler? CommandHandler { get; init; }
+
     public double Width { get; init; } = 800;
     public double Height { get; init; } = 600;
     public double? MinWidth { get; init; }
@@ -165,4 +197,7 @@ public interface IPluginWebViewWindow : IAsyncDisposable
     Task ShowAsync(CancellationToken cancellationToken = default);
     Task HideAsync(CancellationToken cancellationToken = default);
     Task CloseAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Pushes an event to the page: window.__noriPlugin.dispatch({kind:'event', event, payload}).</summary>
+    Task SendEventAsync(string eventName, JsonNode? payload, CancellationToken cancellationToken = default);
 }
