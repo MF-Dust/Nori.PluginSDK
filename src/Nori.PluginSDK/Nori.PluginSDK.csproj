@@ -5,7 +5,7 @@
     <PackageId>Nori.PluginSDK</PackageId>
     <Version>2.2.0</Version>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
-    <FileVersion>2.0.0.0</FileVersion>
+    <FileVersion>2.2.0.0</FileVersion>
     <Description>Compile-time contracts for Nori Desktop Plugin API 2.0.</Description>
     <Authors>FuturumTech</Authors>
     <RepositoryUrl>https://github.com/MF-Dust/Nori.PluginSDK</RepositoryUrl>
