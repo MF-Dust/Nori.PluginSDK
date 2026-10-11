@@ -4,17 +4,27 @@ Developer SDK for the Nori Desktop Plugin Specification, synchronized with the p
 
 Current baseline:
 
-- Plugin API: **2.0**
+- Plugin API: **2.3**
 - Manifest schema: **1**
 - Target framework: **.NET 10 (`net10.0`)**
 - Runtime model: trusted in-process .NET plugin
-- Host capability currently available: **`ui.webview`**
+- Host capability currently available: **`ui.avalonia`** (native Avalonia 12.1.1 pages)
+
+## API history
+
+| API | SDK | Contracts |
+| --- | --- | --- |
+| 2.0 | 2.0.0 | Core lifecycle, storage, assets, contributions, capabilities, `IPluginActionContribution` |
+| 2.1 | 2.3.0 | `IPluginPageContribution` / `IPluginPage` with the `ui.avalonia` capability |
+| 2.3 | 2.3.0 | `IPluginActionContribution.Permission` / `PluginActionPermission` |
+
+SDK 2.3.0 removes the WebView contracts (`IWebViewCapability`, `PluginWebViewOptions`, `IPluginWebViewWindow`, `IPluginWebViewCommandHandler`) that shipped in SDK 2.2.0. Nori Desktop no longer implements `ui.webview`; a plugin requiring it is rejected before its assembly is loaded. API 2.2 is not used by the host.
 
 ## Repository layout
 
 ```text
 src/Nori.PluginSDK/       compile-time contracts
-examples/HelloNori/       minimal plugin example
+examples/HelloNori/       minimal plugin example (action + native page)
 docs/plugin-authoring.md  lifecycle and API guidance
 docs/packaging.md         manifest and .noripack layout
 ```
@@ -29,21 +39,21 @@ The SDK project emits an assembly named `Nori.PluginRuntime` because that is the
 
 ## Install from NuGet
 
-Published SDK releases can be referenced directly from NuGet:
-
 ```bash
-dotnet add package Nori.PluginSDK --version 2.0.0
+dotnet add package Nori.PluginSDK --version 2.3.0
 ```
 
 or from a project file:
 
 ```xml
-<PackageReference Include="Nori.PluginSDK" Version="2.0.0" />
+<PackageReference Include="Nori.PluginSDK" Version="2.3.0" />
 ```
 
-The package contains the contract assembly only as a compile-time `ref/net10.0` asset. Plugin packages must not ship `Nori.PluginRuntime.dll`; Nori Desktop provides the runtime contract assembly.
+The package contains the contract assembly only as a compile-time `ref/net10.0` asset. It depends on Avalonia 12.1.1 for compile-time assets only. Plugin packages must not ship `Nori.PluginRuntime.dll` or any Avalonia assembly; Nori Desktop provides both.
 
-Repository releases use tags matching the package version, for example `v2.0.0`. The publish workflow verifies that the tag matches the `<Version>` value in `Nori.PluginSDK.csproj` before pushing to NuGet.org.
+Unit tests that execute plugin code outside the host need the contract assembly at run time. Copy it from the package's `ref/net10.0` folder into the test output, and reference Avalonia directly in the test project if page code runs.
+
+Repository releases use tags matching the package version, for example `v2.3.0`. The publish workflow verifies that the tag matches the `<Version>` value in `Nori.PluginSDK.csproj` before pushing to NuGet.org.
 
 ## Reference from a plugin
 
@@ -55,13 +65,11 @@ During development inside this repository:
 
 The `Private="false"` part matters: the plugin package must not contain `Nori.PluginRuntime.dll`. Nori Desktop binds the contract reference to its own host assembly and rejects packages that include a duplicate contract DLL.
 
-For package distribution of the SDK:
+To pack the SDK:
 
 ```bash
 dotnet pack src/Nori.PluginSDK/Nori.PluginSDK.csproj -c Release
 ```
-
-The resulting `Nori.PluginSDK` package carries the contract as a compile-time `ref/net10.0` asset with no runtime asset.
 
 ## Minimal plugin
 
@@ -81,7 +89,7 @@ public sealed class Plugin : INoriPlugin
 }
 ```
 
-See [`examples/HelloNori`](examples/HelloNori) for storage, contributions, and WebView capability usage.
+See [`examples/HelloNori`](examples/HelloNori) for storage, an assistant action, and a native page.
 
 ## Public API boundary
 
@@ -90,8 +98,13 @@ The SDK intentionally contains only contracts already present in Nori Desktop:
 - `INoriPlugin`, `IPluginContext`, `PluginDescriptor`
 - `IPluginLogger`, `IPluginStorage`, `IPluginAssets`
 - `IPluginContribution`, `IContributionRegistry`, `IPluginRegistration`
-- `IPluginCapability`, `IPluginCapabilities`, `PluginCapabilityStatus`, `PluginCapabilityAttribute`
-- `IWebViewCapability`, `PluginWebViewOptions`, `IPluginWebViewWindow`
+- `IPluginActionContribution`, `PluginActionPermission`
+- `IPluginPageContribution`, `IPluginPage`
+- `IPluginCapability`, `IPluginCapabilities`, `PluginCapabilityStatus`, `PluginCapabilityAttribute`, `PluginCapabilityIds`
 - `PluginException`
 
 Host implementation details such as package installation, bridge routing, `AssemblyLoadContext`, state management, and window hosting are intentionally absent.
+
+## Plugins built on this SDK
+
+- [`MF-Dust/Nori.Plugins.Browser`](https://github.com/MF-Dust/Nori.Plugins.Browser): browser automation in an isolated Microsoft Edge session.

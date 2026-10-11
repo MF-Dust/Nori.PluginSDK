@@ -3,10 +3,10 @@
     <RootNamespace>Nori.PluginRuntime</RootNamespace>
     <AssemblyName>Nori.PluginRuntime</AssemblyName>
     <PackageId>Nori.PluginSDK</PackageId>
-    <Version>2.2.0</Version>
+    <Version>2.3.0</Version>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
-    <FileVersion>2.2.0.0</FileVersion>
-    <Description>Compile-time contracts for Nori Desktop Plugin API 2.0.</Description>
+    <FileVersion>2.3.0.0</FileVersion>
+    <Description>Compile-time contracts for Nori Desktop Plugin API 2.3.</Description>
     <Authors>FuturumTech</Authors>
     <RepositoryUrl>https://github.com/MF-Dust/Nori.PluginSDK</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -16,6 +16,14 @@
     <BuildOutputTargetFolder>ref</BuildOutputTargetFolder>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      IPluginPage exposes Avalonia.Controls.Control. Nori Desktop shares its own Avalonia 12.1.1 assemblies with
+      plugins, so consumers only receive compile-time Avalonia assets and must not ship Avalonia in a .noripack.
+    -->
+    <PackageReference Include="Avalonia" Version="12.1.1" PrivateAssets="runtime;native;build;buildTransitive;analyzers;contentfiles" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- Nori Desktop owns the runtime contract assembly. Pack it only under ref/net10.0. -->

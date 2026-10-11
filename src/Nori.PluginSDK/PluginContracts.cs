@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Nori.PluginRuntime;
@@ -6,18 +5,32 @@ namespace Nori.PluginRuntime;
 /// <summary>Describes the currently loaded plugin. Values originate from the validated manifest.</summary>
 public sealed record PluginDescriptor
 {
+    /// <summary>Unique plugin ID.</summary>
     public required string Id { get; init; }
+
+    /// <summary>Display name.</summary>
     public required string Name { get; init; }
+
+    /// <summary>Plugin description.</summary>
     public required string Description { get; init; }
+
+    /// <summary>Semantic plugin version.</summary>
     public required string Version { get; init; }
+
+    /// <summary>Plugin API version declared by the manifest (major.minor).</summary>
     public required string ApiVersion { get; init; }
+
+    /// <summary>Capabilities declared by the manifest.</summary>
     public IReadOnlyList<string> Capabilities { get; init; } = [];
 }
 
-/// <summary>Entry point for a trusted in-process Nori plugin.</summary>
+/// <summary>Entry point for a trusted in-process Nori plugin. The AssemblyLoadContext is not a security sandbox.</summary>
 public interface INoriPlugin
 {
+    /// <summary>Activates the plugin and registers its contributions.</summary>
     ValueTask ActivateAsync(IPluginContext context, CancellationToken cancellationToken);
+
+    /// <summary>Deactivates the plugin and releases plugin-owned resources.</summary>
     ValueTask DeactivateAsync(CancellationToken cancellationToken);
 }
 
@@ -80,33 +93,71 @@ public interface IPluginActionContribution : IPluginContribution
 
     /// <summary>Executes the action and returns a serializable result.</summary>
     Task<JsonObject?> InvokeAsync(JsonNode? arguments, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Invocation permission level (API 2.3). The host decides from this level whether the user must approve
+    /// each call. Plugins that do not implement it default to <see cref="PluginActionPermission.Safe"/>.
+    /// </summary>
+    PluginActionPermission Permission => PluginActionPermission.Safe;
 }
 
-/// <summary>Revocable registration handle for a contribution.</summary>
+/// <summary>Permission level used when a plugin action is invoked as an AI tool (API 2.3).</summary>
+public enum PluginActionPermission
+{
+    /// <summary>No external side effects; runs directly.</summary>
+    Safe,
+
+    /// <summary>Has side effects; requires user confirmation unless the user's permission gear allows it.</summary>
+    Confirm,
+
+    /// <summary>High risk; requires user confirmation on every call except in full bypass mode.</summary>
+    Dangerous,
+}
+
+/// <summary>Lazy native page factory (API 2.1). The host creates pages on the UI thread only.</summary>
+public interface IPluginPageContribution : IPluginContribution
+{
+    /// <summary>Page ID, unique within the plugin.</summary>
+    string Id { get; }
+
+    /// <summary>Page title shown by the host.</summary>
+    string Title { get; }
+
+    /// <summary>Creates a new page instance with an unattached, non-window control.</summary>
+    IPluginPage CreatePage();
+}
+
+/// <summary>Exclusive unattached control and page resources. The host disposes it on the UI thread.</summary>
+public interface IPluginPage : IDisposable
+{
+    Avalonia.Controls.Control Control { get; }
+}
+
+/// <summary>Revocable handle for one plugin contribution registration.</summary>
 public interface IPluginRegistration : IDisposable
 {
 }
 
-/// <summary>Registers contributions owned by the current plugin context.</summary>
+/// <summary>Contribution registry owned by the current plugin context.</summary>
 public interface IContributionRegistry
 {
     IPluginRegistration Register<T>(T contribution)
         where T : class, IPluginContribution;
 }
 
-/// <summary>Declared, granted and available state for one plugin capability.</summary>
+/// <summary>Independent declared/granted/available state for a capability.</summary>
 public sealed record PluginCapabilityStatus(
     string Id,
     bool Declared,
     bool Granted,
     bool Available);
 
-/// <summary>Marker interface for a host capability exposed to plugins.</summary>
+/// <summary>Marker interface for a host-provided capability.</summary>
 public interface IPluginCapability
 {
 }
 
-/// <summary>Capability lookup for the current plugin.</summary>
+/// <summary>Capability lookup.</summary>
 public interface IPluginCapabilities
 {
     bool TryGet<T>(out T? capability)
@@ -118,22 +169,24 @@ public interface IPluginCapabilities
     IReadOnlyList<PluginCapabilityStatus> Statuses { get; }
 }
 
-/// <summary>Maps a capability contract to its manifest capability ID.</summary>
+/// <summary>Manifest capability ID for a capability interface or implementation.</summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, AllowMultiple = false, Inherited = false)]
 public sealed class PluginCapabilityAttribute(string id) : Attribute
 {
+    /// <summary>Capability ID.</summary>
     public string Id { get; } = string.IsNullOrWhiteSpace(id)
         ? throw new ArgumentException("Capability ID cannot be empty.", nameof(id))
         : id;
 }
 
-/// <summary>Capability IDs implemented by the current Plugin API.</summary>
+/// <summary>UI capability IDs supported by the desktop host.</summary>
 public static class PluginCapabilityIds
 {
-    public const string WebView = "ui.webview";
+    /// <summary>Native Avalonia pages (API 2.1).</summary>
+    public const string AvaloniaUi = "ui.avalonia";
 }
 
-/// <summary>Stable plugin-boundary exception. <see cref="Code"/> is machine-readable.</summary>
+/// <summary>Plugin boundary error. <see cref="Code"/> is a stable machine-readable error code.</summary>
 public class PluginException : Exception
 {
     public PluginException(string code, string message)
@@ -149,55 +202,25 @@ public class PluginException : Exception
     }
 
     public string Code { get; }
-}
 
-/// <summary>Host WebView capability for plugin-owned windows.</summary>
-[PluginCapability(PluginCapabilityIds.WebView)]
-public interface IWebViewCapability : IPluginCapability
-{
-    Task<IPluginWebViewWindow> CreateWindowAsync(
-        PluginWebViewOptions options,
-        CancellationToken cancellationToken = default);
-}
+    /// <summary>Host-assembled redacted diagnostics: manifest ID of the failing plugin.</summary>
+    public string? DiagnosticPluginId { get; internal set; }
 
-/// <summary>Plugin-provided handler for custom WebView bridge commands. Non-allowlisted commands invoked from the plugin's page are forwarded to this handler.</summary>
-public interface IPluginWebViewCommandHandler
-{
-    /// <summary>Handles a custom command from the plugin page. The return value is JSON-serialized back to the page.</summary>
-    Task<object?> HandleAsync(string command, JsonElement args, CancellationToken cancellationToken);
-}
+    /// <summary>Host-assembled redacted diagnostics: manifest version of the failing plugin.</summary>
+    public string? DiagnosticPluginVersion { get; internal set; }
 
-/// <summary>Options used to create a plugin WebView window.</summary>
-public sealed record PluginWebViewOptions
-{
-    public required string Id { get; init; }
-    public required string Title { get; init; }
-    public required string EntryPoint { get; init; }
+    /// <summary>Host-assembled redacted diagnostics: host API version (major.minor).</summary>
+    public string? DiagnosticHostApiVersion { get; internal set; }
 
-    /// <summary>Optional plugin custom bridge command handler. When null, non-allowlisted commands are still denied.</summary>
-    public IPluginWebViewCommandHandler? CommandHandler { get; init; }
+    /// <summary>Host-assembled redacted diagnostics: host product version.</summary>
+    public string? DiagnosticHostVersion { get; internal set; }
 
-    public double Width { get; init; } = 800;
-    public double Height { get; init; } = 600;
-    public double? MinWidth { get; init; }
-    public double? MinHeight { get; init; }
-    public bool CanResize { get; init; } = true;
-    public bool Topmost { get; init; }
-    public bool ShowInTaskbar { get; init; } = true;
-}
+    /// <summary>Host-assembled redacted diagnostics: root exception type name.</summary>
+    public string? DiagnosticExceptionType { get; internal set; }
 
-/// <summary>Lifecycle handle for a plugin WebView window.</summary>
-public interface IPluginWebViewWindow : IAsyncDisposable
-{
-    string PluginId { get; }
-    string Id { get; }
-    string Label { get; }
-    string? Title { get; }
-    bool IsVisible { get; }
-    Task ShowAsync(CancellationToken cancellationToken = default);
-    Task HideAsync(CancellationToken cancellationToken = default);
-    Task CloseAsync(CancellationToken cancellationToken = default);
+    /// <summary>Host-assembled redacted diagnostics: truncated TypeLoadException type name.</summary>
+    public string? DiagnosticTypeLoadTypeName { get; internal set; }
 
-    /// <summary>Pushes an event to the page: window.__noriPlugin.dispatch({kind:'event', event, payload}).</summary>
-    Task SendEventAsync(string eventName, JsonNode? payload, CancellationToken cancellationToken = default);
+    /// <summary>Host-assembled redacted diagnostics: assembly file name involved in a FileLoadException.</summary>
+    public string? DiagnosticAssemblyName { get; internal set; }
 }
