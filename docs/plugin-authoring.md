@@ -1,6 +1,6 @@
 # Plugin authoring
 
-This repository mirrors the public plugin contracts currently implemented by Nori Desktop Plugin API 2.3.
+This repository mirrors the public plugin contracts currently implemented by Nori Desktop Plugin API 2.4.
 
 ## Runtime model
 
@@ -22,13 +22,16 @@ The plugin entry type must:
 
 - `2.0`: actions and the core context;
 - `2.1`: native pages (`ui.avalonia`);
-- `2.3`: action permission levels.
+- `2.3`: action permission levels;
+- `2.4`: chat providers (`ai.provider`), embedded settings pages, application interop (`applications`).
 
 ## Capabilities
 
 | ID | Contract | Purpose |
 | --- | --- | --- |
-| `ui.avalonia` | `IPluginPageContribution` / `IPluginPage` | Native Avalonia pages opened from the host's plugin settings |
+| `ui.avalonia` | `IPluginPageContribution` / `IPluginPage` | Native Avalonia pages, standalone or embedded in settings |
+| `ai.provider` | `IPluginChatProviderContribution` | A chat provider that returns a Microsoft.Extensions.AI `IChatClient` |
+| `applications` | `IPluginApplicationCapability` | Process query, launch and exit wait; no termination or shell |
 
 Capabilities must be declared in `manifest.json`, either as `capabilities` (required: the plugin is rejected if the host lacks it) or `optionalCapabilities` (check `context.Capabilities.Statuses` before registering). Registering a page without declaring `ui.avalonia` fails.
 
@@ -49,6 +52,38 @@ Hosts older than API 2.3 ignore `Permission` and treat every action as safe, so 
 ## Native pages
 
 Register an `IPluginPageContribution` factory in `ActivateAsync`; do not create controls there. The host calls `CreatePage` on the UI thread each time the user opens the page and disposes the page on the UI thread when it closes or the plugin is revoked. Return a new, unattached, non-window `Control` every time. Background work that updates controls must post to `Avalonia.Threading.Dispatcher.UIThread`.
+
+`Placement` (API 2.4) selects the surface:
+
+- `PluginPagePlacement.Window` (default): a standalone host window with host chrome, opened from the plugin card.
+- `PluginPagePlacement.Settings`: a navigation entry under the host's plugin-pages group inside the settings window. The page owns its scrolling and layout; the host disposes it synchronously on revocation or shutdown even while settings is hidden.
+
+Declare `"apiVersion": "2.4"` to use `Settings` placement.
+
+## Chat providers
+
+Register an `IPluginChatProviderContribution` when the manifest declares `ai.provider`. The host assigns the stable ID `plugin:<pluginId>:<id>` and only passes the selected connection settings through `PluginChatClientOptions`.
+
+```csharp
+public IChatClient CreateClient(PluginChatClientOptions options) => new MyClient(options);
+public ValueTask<IReadOnlyList<string>> GetModelsAsync(PluginChatClientOptions options, CancellationToken cancellationToken) => ...;
+```
+
+- Return a fresh client per call. The host owns and disposes it after the request or when the plugin is revoked; never return a shared singleton.
+- `RequiresApiKey => false` and an empty `DefaultBaseUrl` support local models without connection fields. A non-empty default URL must be absolute `http`/`https` without user info.
+- Honour the cancellation token: revocation cancels in-flight requests. `GetModelsAsync` receives an empty `Model`.
+- The host never falls back to a built-in protocol when the plugin ID is missing, so the user gets a clear error instead of an unexpected provider.
+- Do not bundle `Microsoft.Extensions.AI.Abstractions.dll`; the host shares its own copy, and packages carrying it are rejected.
+
+## Application interop
+
+`context.Capabilities.GetRequired<IPluginApplicationCapability>()` returns a capability that:
+
+- lists running processes as ID and name only;
+- starts an existing absolute executable with `UseShellExecute = false` and separate arguments;
+- waits for an existing process, completing immediately when it has already exited.
+
+The host never terminates, tracks or reparents a launched process, and revocation only cancels the wait. Explain in your README which external program the plugin starts and why.
 
 ## Storage
 

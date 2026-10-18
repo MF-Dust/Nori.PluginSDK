@@ -125,6 +125,21 @@ public interface IPluginPageContribution : IPluginContribution
 
     /// <summary>Creates a new page instance with an unattached, non-window control.</summary>
     IPluginPage CreatePage();
+
+    /// <summary>
+    /// Where the host surfaces this page (API 2.4). Plugins that do not implement it keep opening a standalone window.
+    /// </summary>
+    PluginPagePlacement Placement => PluginPagePlacement.Window;
+}
+
+/// <summary>Host surface used for a native plugin page (API 2.4).</summary>
+public enum PluginPagePlacement
+{
+    /// <summary>Standalone host window, opened from the plugin settings card.</summary>
+    Window,
+
+    /// <summary>Embedded navigation page inside the host's settings window.</summary>
+    Settings,
 }
 
 /// <summary>Exclusive unattached control and page resources. The host disposes it on the UI thread.</summary>
@@ -184,6 +199,12 @@ public static class PluginCapabilityIds
 {
     /// <summary>Native Avalonia pages (API 2.1).</summary>
     public const string AvaloniaUi = "ui.avalonia";
+
+    /// <summary>Chat providers that return a Microsoft.Extensions.AI IChatClient (API 2.4).</summary>
+    public const string ChatProvider = "ai.provider";
+
+    /// <summary>Process query, launch and exit-wait interop (API 2.4).</summary>
+    public const string Applications = "applications";
 }
 
 /// <summary>Plugin boundary error. <see cref="Code"/> is a stable machine-readable error code.</summary>

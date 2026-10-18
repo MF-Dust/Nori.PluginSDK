@@ -22,6 +22,7 @@ Any other top-level entry is rejected. Private native helpers or driver files ma
 
 - Do not place `Nori.PluginRuntime.dll` anywhere inside the package. Nori Desktop supplies that assembly and rejects packages that carry their own current or legacy contract assembly.
 - Do not ship Avalonia assemblies (renamed copies are detected too). Nori Desktop shares its Avalonia 12.1.1 assemblies with plugins.
+- Do not ship `Microsoft.Extensions.AI.Abstractions.dll`; the host shares its own copy so `IChatClient` keeps a single type identity. Renamed copies are detected.
 - References to `Nori.Core`, `Nori.Desktop`, or `Microsoft.AspNetCore*` are rejected.
 
 When developing from this repository, the example uses a project reference with `Private="false"` so the contract DLL is compile-time only. When the SDK is consumed as a NuGet package, the package is intentionally packed with a `ref/net10.0` compile asset and no runtime asset.
@@ -36,7 +37,7 @@ When developing from this repository, the example uses a project reference with 
   "description": "Nori plugin",
   "version": "1.0.0",
   "authors": [{ "name": "Nori" }],
-  "apiVersion": "2.3",
+  "apiVersion": "2.4",
   "minHostVersion": "1.0.0",
   "runtime": {
     "kind": "dotnet",

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "io.nori.localchat",
+  "name": "Local Echo Chat",
+  "description": "Minimal Nori Plugin API 2.4 ai.provider example.",
+  "version": "1.0.0",
+  "authors": [
+    { "name": "Nori Plugin Developer" }
+  ],
+  "apiVersion": "2.4",
+  "minHostVersion": "1.0.0",
+  "runtime": {
+    "kind": "dotnet",
+    "assembly": "lib/LocalChat.dll",
+    "entryType": "LocalChat.Plugin"
+  },
+  "capabilities": [
+    "ai.provider"
+  ],
+  "optionalCapabilities": [],
+  "platforms": [
+    "windows",
+    "linux",
+    "macos"
+  ],
+  "dependencies": []
+}
