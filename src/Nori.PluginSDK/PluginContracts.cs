@@ -82,13 +82,16 @@ public interface IPluginContribution
 /// </summary>
 public interface IPluginActionContribution : IPluginContribution
 {
-    /// <summary>Action ID (unique within the plugin; used in the host tool name).</summary>
+    /// <summary>
+    /// Action ID: 1–128 ASCII letters, digits, '.', '_' or '-', unique within the plugin and used in the host tool
+    /// name. The combined tool name must stay within 128 characters or the host skips the action.
+    /// </summary>
     string Id { get; }
 
-    /// <summary>Model-facing action description.</summary>
+    /// <summary>Model-facing action description: non-empty, at most 2,000 characters, no control characters except CR, LF and tab.</summary>
     string Description { get; }
 
-    /// <summary>Parameter JSON Schema (null means no parameters).</summary>
+    /// <summary>Parameter JSON Schema: a JSON object, or null for no parameters. Other root nodes are rejected.</summary>
     JsonNode? ParametersSchema { get; }
 
     /// <summary>Executes the action and returns a serializable result.</summary>

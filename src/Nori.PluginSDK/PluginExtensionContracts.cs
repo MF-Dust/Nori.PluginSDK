@@ -2,7 +2,10 @@ using Microsoft.Extensions.AI;
 
 namespace Nori.PluginRuntime;
 
-/// <summary>Connection settings handed to a chat provider only when the user selects it.</summary>
+/// <summary>
+/// Connection settings handed to a chat provider only when the user selects it. The host's reasoning level and
+/// model capability catalogue are not applied to plugin providers; handle provider-specific options in the client.
+/// </summary>
 public sealed record PluginChatClientOptions(string BaseUrl, string ApiKey, string Model);
 
 /// <summary>
@@ -13,13 +16,16 @@ public sealed record PluginChatClientOptions(string BaseUrl, string ApiKey, stri
 /// </summary>
 public interface IPluginChatProviderContribution : IPluginContribution
 {
-    /// <summary>Stable ID, unique within the plugin.</summary>
+    /// <summary>Stable ID, unique within the plugin: 1–64 ASCII letters, digits, '_' or '-'.</summary>
     string Id { get; }
 
-    /// <summary>Display name shown in the host model settings.</summary>
+    /// <summary>Display name shown in the host model settings: non-empty, at most 128 characters, no control characters.</summary>
     string Name { get; }
 
-    /// <summary>Default endpoint; may be empty for local clients.</summary>
+    /// <summary>
+    /// Default endpoint; may be empty for local clients but never null. A non-empty value must be an absolute
+    /// http/https URL without user info.
+    /// </summary>
     string DefaultBaseUrl => "";
 
     /// <summary>Whether the user must supply an API key; local clients may return false.</summary>
@@ -41,7 +47,8 @@ public interface IPluginApplicationCapability : IPluginCapability
 
     /// <summary>
     /// Starts an executable directly and returns its process ID. Arguments are passed as separate items
-    /// without a system shell. The host does not take ownership of the process.
+    /// without a system shell. On Windows, .bat and .cmd files are rejected because they are implicitly run
+    /// through cmd.exe. The host does not take ownership of the process.
     /// </summary>
     Task<int> LaunchAsync(PluginApplicationLaunchRequest request, CancellationToken cancellationToken = default);
 
@@ -60,7 +67,10 @@ public sealed record PluginApplicationInfo(int ProcessId, string Name);
 /// <summary>Application launch request; the path must be an existing absolute path.</summary>
 public sealed record PluginApplicationLaunchRequest
 {
-    /// <summary>Existing executable absolute path. No PATH lookup or file association is performed.</summary>
+    /// <summary>
+    /// Existing executable absolute path. No PATH lookup or file association is performed; Windows batch files
+    /// (.bat, .cmd) are rejected.
+    /// </summary>
     public required string FileName { get; init; }
 
     /// <summary>Separate command-line arguments; empty strings allowed, null or control characters rejected.</summary>

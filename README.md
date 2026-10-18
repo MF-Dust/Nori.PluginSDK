@@ -19,6 +19,8 @@ Current baseline:
 | 2.3 | 2.3.0 | `IPluginActionContribution.Permission` / `PluginActionPermission` |
 | 2.4 | 2.4.0 | `IPluginChatProviderContribution` / `ai.provider`, `IPluginPageContribution.Placement`, `IPluginApplicationCapability` / `applications` |
 
+SDK 2.4.1 keeps the API 2.4 contracts unchanged and documents the host's registration rules (action ID/description/schema limits, chat provider metadata, Windows batch files rejected by `applications`, no host reasoning options for plugin providers).
+
 SDK 2.4.0 adds the API 2.4 contracts; plugins built for 2.3.0 keep loading. API 2.4 adds:
 - `IPluginChatProviderContribution`: the plugin returns a `Microsoft.Extensions.AI.IChatClient`, so text, images, streaming and tools reuse the host conversion.
 - `IPluginPageContribution.Placement`: `Window` (default) or `Settings`, which embeds the page in the settings navigation.
@@ -47,20 +49,20 @@ The SDK project emits an assembly named `Nori.PluginRuntime` because that is the
 ## Install from NuGet
 
 ```bash
-dotnet add package Nori.PluginSDK --version 2.4.0
+dotnet add package Nori.PluginSDK --version 2.4.1
 ```
 
 or from a project file:
 
 ```xml
-<PackageReference Include="Nori.PluginSDK" Version="2.4.0" />
+<PackageReference Include="Nori.PluginSDK" Version="2.4.1" />
 ```
 
 The package contains the contract assembly only as a compile-time `ref/net10.0` asset. It depends on Avalonia 12.1.1 and Microsoft.Extensions.AI.Abstractions 10.9.0 for compile-time assets only. Plugin packages must not ship `Nori.PluginRuntime.dll`, any Avalonia assembly or `Microsoft.Extensions.AI.Abstractions.dll`; Nori Desktop provides all of them.
 
 Unit tests that execute plugin code outside the host need the contract assembly at run time. Copy it from the package's `ref/net10.0` folder into the test output, and reference Avalonia directly in the test project if page code runs.
 
-Repository releases use tags matching the package version, for example `v2.4.0`. The publish workflow verifies that the tag matches the `<Version>` value in `Nori.PluginSDK.csproj` before pushing to NuGet.org.
+Repository releases use tags matching the package version, for example `v2.4.1`. The publish workflow verifies that the tag matches the `<Version>` value in `Nori.PluginSDK.csproj` before pushing to NuGet.org.
 
 ## Reference from a plugin
 

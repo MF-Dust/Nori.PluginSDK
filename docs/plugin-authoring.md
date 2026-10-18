@@ -39,6 +39,14 @@ Capabilities must be declared in `manifest.json`, either as `capabilities` (requ
 
 `IPluginActionContribution` registers an assistant tool named `plugin__<pluginId with . replaced by _>__<actionId>`. Return small JSON results; do not return secrets or full local paths.
 
+The host validates each action when it is registered:
+
+- `Id`: 1–128 ASCII letters, digits, `.`, `_` or `-`, unique within the plugin (case-sensitive). A revoked registration frees its ID.
+- `Description`: non-empty, at most 2,000 characters, no control characters other than `\r`, `\n` and `\t`.
+- `ParametersSchema`: a JSON object or `null`; any other root node is rejected.
+
+The combined tool name must also fit the host's 128-character tool name limit. An action whose full name is too long is skipped with a host warning while the plugin's other actions stay available, so leave room for the plugin ID. Keep `Id`, `Description` and the schema stable while registered.
+
 Set `Permission` to match the side effects:
 
 | Permission | Host behaviour |
@@ -69,8 +77,10 @@ public IChatClient CreateClient(PluginChatClientOptions options) => new MyClient
 public ValueTask<IReadOnlyList<string>> GetModelsAsync(PluginChatClientOptions options, CancellationToken cancellationToken) => ...;
 ```
 
+- `Id` is 1–64 ASCII letters, digits, `_` or `-`, unique within the plugin. `Name` is non-empty, at most 128 characters, with no control characters. Invalid metadata or a duplicate ID fails registration.
 - Return a fresh client per call. The host owns and disposes it after the request or when the plugin is revoked; never return a shared singleton.
-- `RequiresApiKey => false` and an empty `DefaultBaseUrl` support local models without connection fields. A non-empty default URL must be absolute `http`/`https` without user info.
+- `RequiresApiKey => false` and an empty `DefaultBaseUrl` support local models without connection fields. `DefaultBaseUrl` must never be `null`; a non-empty default URL must be absolute `http`/`https` without user info.
+- The host's reasoning level and its models.dev capability lookup do not apply to plugin providers. `PluginChatClientOptions` carries only the endpoint, key and model, and the host plans the context window with conservative defaults. Handle provider-specific reasoning options inside your client.
 - Honour the cancellation token: revocation cancels in-flight requests. `GetModelsAsync` receives an empty `Model`.
 - The host never falls back to a built-in protocol when the plugin ID is missing, so the user gets a clear error instead of an unexpected provider.
 - Do not bundle `Microsoft.Extensions.AI.Abstractions.dll`; the host shares its own copy, and packages carrying it are rejected.
@@ -80,7 +90,7 @@ public ValueTask<IReadOnlyList<string>> GetModelsAsync(PluginChatClientOptions o
 `context.Capabilities.GetRequired<IPluginApplicationCapability>()` returns a capability that:
 
 - lists running processes as ID and name only;
-- starts an existing absolute executable with `UseShellExecute = false` and separate arguments;
+- starts an existing absolute executable with `UseShellExecute = false` and separate arguments; on Windows `.bat` and `.cmd` files are rejected because the system would hand them to `cmd.exe`, whose parsing does not respect the argument quoting;
 - waits for an existing process, completing immediately when it has already exited.
 
 The host never terminates, tracks or reparents a launched process, and revocation only cancels the wait. Explain in your README which external program the plugin starts and why.

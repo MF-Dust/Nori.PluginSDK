@@ -3,9 +3,9 @@
     <RootNamespace>Nori.PluginRuntime</RootNamespace>
     <AssemblyName>Nori.PluginRuntime</AssemblyName>
     <PackageId>Nori.PluginSDK</PackageId>
-    <Version>2.4.0</Version>
+    <Version>2.4.1</Version>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
-    <FileVersion>2.4.0.0</FileVersion>
+    <FileVersion>2.4.1.0</FileVersion>
     <Description>Compile-time contracts for Nori Desktop Plugin API 2.4.</Description>
     <Authors>FuturumTech</Authors>
     <RepositoryUrl>https://github.com/MF-Dust/Nori.PluginSDK</RepositoryUrl>
